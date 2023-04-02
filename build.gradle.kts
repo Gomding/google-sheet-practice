@@ -20,7 +20,8 @@ repositories {
 
 dependencies {
     // web
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-starter-batch")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     // persistence
@@ -31,6 +32,12 @@ dependencies {
     implementation("com.google.api-client:google-api-client:2.0.0")
     implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
     implementation("com.google.apis:google-api-services-sheets:v4-rev20220927-2.0.0")
+
+    // object mapping
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
+
+    // https://mvnrepository.com/artifact/com.konghq/unirest-java
+    implementation("com.konghq:unirest-java:3.14.2")
 
     // test
     testImplementation(kotlin("test"))
