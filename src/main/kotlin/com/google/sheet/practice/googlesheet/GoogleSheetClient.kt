@@ -14,16 +14,38 @@ import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.google.api.services.sheets.v4.model.ValueRange
 import com.google.sheet.practice.*
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Component
 import java.io.*
 import java.util.*
 
+@Component
 class GoogleSheetClient {
-    private val APPLICATION_NAME = "Google Sheets API Java Quickstart"
+    @Value("\${spread.sheet.id}")
+    private lateinit var spreadsheetId: String
+
+    private val APPLICATION_NAME = "hululuuuu-delivery-sheet"
     private val JSON_FACTORY: JsonFactory = GsonFactory.getDefaultInstance()
     private val TOKENS_DIRECTORY_PATH = "tokens"
 
     private val SCOPES: List<String> = Collections.singletonList(SheetsScopes.SPREADSHEETS_READONLY)
     private val CREDENTIALS_FILE_PATH = "/credentials.json"
+
+    // TODO: 네이버 탭 정보와 구글 탭 정보를 반환받을 수 있도록 수정해야함
+    fun getGoogleSheetRows(): List<List<Any>> {
+        val HTTP_TRANSPORT: NetHttpTransport = GoogleNetHttpTransport.newTrustedTransport()
+        val range = "naver!A1:A2"
+        val service = Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
+            .setApplicationName(APPLICATION_NAME)
+            .build()
+        val response: ValueRange = service.spreadsheets().values()[spreadsheetId, range]
+            .execute()
+        val values: List<List<Any>> = response.getValues()
+        if (values.isEmpty()) {
+            throw IllegalStateException("Google Sheet에서 읽어온 데이터가 없습니다. values: $values")
+        }
+        return values
+    }
 
     @Throws(IOException::class)
     private fun getCredentials(HTTP_TRANSPORT: NetHttpTransport): Credential? {
@@ -41,22 +63,5 @@ class GoogleSheetClient {
             .build()
         val receiver = LocalServerReceiver.Builder().setPort(8888).build()
         return AuthorizationCodeInstalledApp(flow, receiver).authorize("user")
-    }
-
-    // TODO: 네이버 탭 정보와 구글 탭 정보를 반환받을 수 있도록 수정해야함
-    fun getGoogleSheetRows(): List<List<Any>> {
-        val HTTP_TRANSPORT: NetHttpTransport = GoogleNetHttpTransport.newTrustedTransport()
-        val spreadsheetId = "12mkuSN-O_mfbNPhG9QN5EXZPiHKSkPGJZZ3_V99yPSo"
-        val range = "naver!A1:A2"
-        val service = Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-            .setApplicationName(APPLICATION_NAME)
-            .build()
-        val response: ValueRange = service.spreadsheets().values()[spreadsheetId, range]
-            .execute()
-        val values: List<List<Any>> = response.getValues()
-        if (values == null || values.isEmpty()) {
-            throw IllegalStateException("Google Sheet에서 읽어온 데이터가 없습니다. values: $values")
-        }
-        return values
     }
 }
