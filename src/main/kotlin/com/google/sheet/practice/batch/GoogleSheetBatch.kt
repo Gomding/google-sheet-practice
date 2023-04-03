@@ -38,7 +38,8 @@ class GoogleSheetBatch(
         return stepBuilderFactory["googleSheetReadStep1"]
             .tasklet { _, _ ->
                 logger.info(">> google sheet read tasklet start <<")
-                println("${googleSheetClient.getGoogleSheetRows()}")
+                val range = "naver!A1:A2"
+                println("${googleSheetClient.getGoogleSheetRows(range)}")
 
                 RepeatStatus.FINISHED
             }
