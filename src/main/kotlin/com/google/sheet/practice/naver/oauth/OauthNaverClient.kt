@@ -1,4 +1,4 @@
-package com.google.sheet.practice.oauth
+package com.google.sheet.practice.naver.oauth
 
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate

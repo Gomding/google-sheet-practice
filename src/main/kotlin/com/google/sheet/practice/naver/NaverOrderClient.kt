@@ -1,5 +1,6 @@
-package com.google.sheet.practice.oauth
+package com.google.sheet.practice.naver
 
+import com.google.sheet.practice.naver.oauth.OauthNaverClient
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod

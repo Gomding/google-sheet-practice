@@ -1,4 +1,4 @@
-package com.google.sheet.practice.oauth
+package com.google.sheet.practice.naver.oauth
 
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
