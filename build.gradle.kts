@@ -33,6 +33,9 @@ dependencies {
     implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
     implementation("com.google.apis:google-api-services-sheets:v4-rev20220927-2.0.0")
 
+    // https://mvnrepository.com/artifact/com.google.auth/google-auth-library-oauth2-http
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.16.0")
+
     // object mapping
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
 
