@@ -21,8 +21,14 @@ repositories {
 dependencies {
     // web
     implementation("org.springframework.boot:spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-batch")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+
+    // https://mvnrepository.com/artifact/org.mindrot/jbcrypt
+    // 네이버 인증 토큰 생성을 위한 전자서명을 생성할 때 사용
+    implementation("org.mindrot:jbcrypt:0.4")
+    implementation("org.apache.commons:commons-lang3:3.12.0")
 
     // persistence
     runtimeOnly("com.h2database:h2")
