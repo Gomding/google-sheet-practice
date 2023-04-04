@@ -1,4 +1,4 @@
-package com.google.sheet.practice.googlesheet
+package com.google.sheet.practice.googlesheet.external
 
 /**
  * https://developers.google.com/sheets/api/reference/rest/v4/ValueInputOption?hl=ko
