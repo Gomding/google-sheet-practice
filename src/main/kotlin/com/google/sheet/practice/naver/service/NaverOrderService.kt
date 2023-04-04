@@ -1,6 +1,7 @@
 package com.google.sheet.practice.naver.service
 
 import com.google.sheet.practice.googlesheet.external.GoogleSheetClient
+import com.google.sheet.practice.naver.ProductOrderStatus
 import com.google.sheet.practice.naver.domain.NaverProductOrderDetail
 import com.google.sheet.practice.naver.external.NaverOrderClient
 import com.google.sheet.practice.naver.external.dto.NaverProductOrdersDetailRequest
@@ -21,12 +22,22 @@ class NaverOrderService(
     }
 
     fun updateRowFromNewDelivery() {
+        val originOrders = googleSheetClient.getGoogleSheetRows("naver!A2:N100")
+        val originProductOrderIds = originOrders.map { it[0].toString().toLong() }
+        val ordersResponse = naverOrderClient.lastChangedStatusOrders().data.lastChangeStatuses
+        val newOrders = ordersResponse.map { it.toDomain() }
+            .filter { it.isPayed() }
+        val newProductOrderIds = newOrders.map { it.productOrderId }
         val newOrdersDetail = this.newOrdersDetail()
+        val orderIds = originProductOrderIds.plus(newProductOrderIds).distinct()
+        val naverProductOrdersDetailRequest = NaverProductOrdersDetailRequest(orderIds)
+        val ordersDetailResponse = naverOrderClient.productOrdersDetail(naverProductOrdersDetailRequest)
+        val ordersDetail = ordersDetailResponse.data.map { it.toDomain() }.filter { it.productOrderStatus == ProductOrderStatus.PAYED }
         // naver!A2:M3
         val endColumn = Char(START_SHEET_COLUMN.code + COLUMN_COUNT).toString()
         val endRow = START_SHEET_ROW + newOrdersDetail.size - 1
         val range = "$SHEET_RANGE$endColumn$endRow"
-        val values = newOrdersDetail.map { it.flatValues() }
+        val values = ordersDetail.map { it.flatValues() }
         googleSheetClient.batchUpdateValues(range = range, values = values)
     }
 
