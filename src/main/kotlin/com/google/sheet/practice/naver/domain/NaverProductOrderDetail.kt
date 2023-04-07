@@ -1,6 +1,5 @@
 package com.google.sheet.practice.naver.domain
 
-import com.google.sheet.practice.naver.ProductOrderStatus
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 

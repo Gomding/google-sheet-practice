@@ -1,4 +1,4 @@
-package com.google.sheet.practice.naver
+package com.google.sheet.practice.naver.domain
 
 enum class ProductOrderStatus(
     val description: String,

@@ -1,6 +1,6 @@
 package com.google.sheet.practice.naver.external.dto
 
-import com.google.sheet.practice.naver.ProductOrderStatus
+import com.google.sheet.practice.naver.domain.ProductOrderStatus
 import com.google.sheet.practice.naver.domain.NaverOrderShippingAddress
 import com.google.sheet.practice.naver.domain.NaverProductOrderDetail
 import java.time.LocalDateTime

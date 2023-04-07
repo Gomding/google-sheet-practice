@@ -1,6 +1,6 @@
 package com.google.sheet.practice.naver.external.dto
 
-import com.google.sheet.practice.naver.ProductOrderStatus
+import com.google.sheet.practice.naver.domain.ProductOrderStatus
 import com.google.sheet.practice.naver.domain.LastChangedType
 import com.google.sheet.practice.naver.domain.LastChangedStatusOrder
 import java.time.LocalDateTime

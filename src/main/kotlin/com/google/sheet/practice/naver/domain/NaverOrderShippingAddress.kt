@@ -6,5 +6,4 @@ class NaverOrderShippingAddress(
     val detailedAddress: String,
     val tel1: String,
     val name: String,
-) {
-}
+)
