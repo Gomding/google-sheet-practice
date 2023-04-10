@@ -9,6 +9,9 @@ import java.util.*
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
+/**
+ * [쿠팡 Open API Hmac 가이드](https://developers.coupangcorp.com/hc/ko/articles/360033461914-HMAC-Signature-%EC%83%9D%EC%84%B1)
+ */
 object HmacGenerator {
     fun hmac(httpMethod: HttpMethod, uri: String): String {
         return Hmac.generate(httpMethod.name, uri, SECRET_KEY, ACCESS_KEY)
