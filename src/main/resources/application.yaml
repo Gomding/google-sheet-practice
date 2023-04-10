@@ -5,3 +5,7 @@ spread:
 logging:
   level:
     root: info
+
+spring:
+  main:
+    web-application-type: none
