@@ -23,9 +23,7 @@ class OauthNaverClient(
                 "client_secret_sign=$clientSecretSign&" +
                 "grant_type=$grantType&" +
                 "type=$type")
-        val response: NaverAccessTokenResponse = restTemplate.postForObject(
-            url = url,
-        )
+        val response: NaverAccessTokenResponse = restTemplate.postForObject(url = url)
         return response
     }
 

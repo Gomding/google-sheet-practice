@@ -1,17 +1,13 @@
 package com.google.sheet.practice.googlesheet.external
 
 import com.google.api.client.auth.oauth2.Credential
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
 import com.google.api.client.googleapis.json.GoogleJsonError
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.JsonFactory
 import com.google.api.client.json.gson.GsonFactory
-import com.google.api.client.util.store.MemoryDataStoreFactory
 import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.google.api.services.sheets.v4.model.BatchUpdateValuesRequest
@@ -36,7 +32,7 @@ class GoogleSheetClient {
     fun getGoogleSheetRows(
         range: String,
     ): List<List<Any>> {
-        val sheets = getSheets()
+        val sheets = this.getSheets()
         val response: ValueRange = sheets.spreadsheets()
             .values()[spreadsheetId, range]
             .execute()
@@ -53,7 +49,7 @@ class GoogleSheetClient {
         valueInputOption: GoogleValueInputOption = GoogleValueInputOption.RAW,
         values: List<List<Any>>
     ): BatchUpdateValuesResponse {
-        val service = getSheets()
+        val service = this.getSheets()
         val body = body(range, values, valueInputOption.value)
         var result: BatchUpdateValuesResponse? = null
         try {
@@ -76,11 +72,10 @@ class GoogleSheetClient {
         valueInputOption: String?
     ): BatchUpdateValuesRequest? {
         val data: MutableList<ValueRange> = ArrayList()
-        data.add(
-            ValueRange()
-                .setRange(range)
-                .setValues(values)
-        )
+        val valueRange = ValueRange()
+            .setRange(range)
+            .setValues(values)
+        data.add(valueRange)
         val body = BatchUpdateValuesRequest()
             .setValueInputOption(valueInputOption)
             .setData(data)
@@ -89,36 +84,26 @@ class GoogleSheetClient {
 
     private fun getSheets(): Sheets {
         val httpTransport: NetHttpTransport = GoogleNetHttpTransport.newTrustedTransport()
-        return Sheets.Builder(httpTransport, JSON_FACTORY, authorize(httpTransport))
+        return Sheets.Builder(httpTransport, JSON_FACTORY, authorize())
             .setApplicationName(APPLICATION_NAME)
             .build()
     }
 
     /** Authorizes the installed application to access user's protected data.  */
     @Throws(Exception::class)
-    private fun authorize(httpTransport: NetHttpTransport): Credential? {
-        // load client secrets
-        val `in`: InputStream = GoogleSheetPracticeApplication::class.java.getResourceAsStream(CREDENTIALS_FILE_PATH)
-            ?: throw FileNotFoundException("Resource not found: $CREDENTIALS_FILE_PATH")
-        val clientSecrets = GoogleClientSecrets.load(
-            JSON_FACTORY,
-            InputStreamReader(`in`)
-        )
-
-        // set up authorization code flow
-
-        val flow = GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY, clientSecrets, SCOPES)
-            .setDataStoreFactory(MemoryDataStoreFactory())
-            .build()
-        // authorize
-        return AuthorizationCodeInstalledApp(flow, LocalServerReceiver()).authorize("user")
+    private fun authorize(): Credential? {
+        val `in`: InputStream =
+            GoogleSheetPracticeApplication::class.java.getResourceAsStream(SERVICE_CREDENTIALS_FILE_PATH)
+                ?: throw FileNotFoundException("Resource not found: $SERVICE_CREDENTIALS_FILE_PATH")
+        return GoogleCredential.fromStream(`in`)
+            .createScoped(SCOPES)
     }
 
     companion object {
-        private val APPLICATION_NAME = "hululuuuu-delivery-sheet"
-        private val JSON_FACTORY: JsonFactory = GsonFactory.getDefaultInstance()
+        private const val APPLICATION_NAME = "hululuuuu-delivery-sheet"
+        private const val SERVICE_CREDENTIALS_FILE_PATH = "/hululuuuu-delivery-sheet-c65b07fc8eb7.json"
 
+        private val JSON_FACTORY: JsonFactory = GsonFactory.getDefaultInstance()
         private val SCOPES: List<String> = Collections.singletonList(SheetsScopes.SPREADSHEETS)
-        private val CREDENTIALS_FILE_PATH = "/credentials.json"
     }
 }

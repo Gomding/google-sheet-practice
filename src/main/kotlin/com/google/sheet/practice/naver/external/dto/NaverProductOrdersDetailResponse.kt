@@ -37,7 +37,7 @@ data class NaverProductOrderDetailResponse(
     val productOrderId: Long,
     val productOrderStatus: String,
     val productName: String,
-    val productOption: String,
+    val productOption: String = "",
     val totalPaymentAmount: Int,
     val expectedSettlementAmount: Int,
     val deliveryFeeAmount: Int,
