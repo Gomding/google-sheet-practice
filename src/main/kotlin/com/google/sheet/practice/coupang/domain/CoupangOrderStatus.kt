@@ -1,4 +1,4 @@
-package com.google.sheet.practice.naver.domain
+package com.google.sheet.practice.coupang.domain
 
 enum class CoupangOrderStatus(
     val description: String,
