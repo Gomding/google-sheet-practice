@@ -36,11 +36,7 @@ class GoogleSheetClient {
         val response: ValueRange = sheets.spreadsheets()
             .values()[spreadsheetId, range]
             .execute()
-        val values: List<List<Any>> = response.getValues()
-        if (values.isEmpty()) {
-            throw IllegalStateException("Google Sheet에서 읽어온 데이터가 없습니다. values: $values")
-        }
-        return values
+        return response.getValues() ?: return emptyList()
     }
 
     @Throws(IOException::class)
@@ -57,7 +53,7 @@ class GoogleSheetClient {
             System.out.printf("%d cells updated.", result.totalUpdatedCells)
         } catch (e: GoogleJsonResponseException) {
             val error: GoogleJsonError = e.getDetails()
-            if (error.getCode() === 404) {
+            if (error.code == 404) {
                 System.out.printf("Spreadsheet not found with id '%s'.\n", spreadsheetId)
             } else {
                 throw e

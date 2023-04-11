@@ -8,5 +8,7 @@ enum class CoupangOrderStatus(
     DEPARTURE("배송지시"),
     DELIVERING("배송중"),
     FINAL_DELIVERY("배송완료"),
-    NONE_TRACKING("업체 직접 배송(배송 연동 미적용), 추적불가")
+    NONE_TRACKING("업체 직접 배송(배송 연동 미적용), 추적불가");
+
+    fun isBeforeDelivery(): Boolean = this == ACCEPT || this == INSTRUCT
 }

@@ -7,4 +7,8 @@ data class CoupangOrderItem(
     val orderPrice: Int, // 총 결제 가격
     val sellerProductItemName: String,
     val canceled: Boolean,
-)
+) {
+    fun toFlatString(): String {
+        return "주문 상품 이름:$vendorItemName, 주문 개수:$shippingCount, 총 결제금액:$orderPrice"
+    }
+}

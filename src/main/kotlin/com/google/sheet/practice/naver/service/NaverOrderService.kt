@@ -33,6 +33,7 @@ class NaverOrderService(
     }
 
     private fun originProductOrderIds(): List<Long> {
+        // TODO(2023-04-11): range 를 동적으로 구할 수 있도록 리팩터링 필요
         val originOrders = googleSheetClient.getGoogleSheetRows("naver!A2:N100")
         return originOrders.map { it[ORDER_ID_SHEET_INDEX].toString().toLong() }
     }
