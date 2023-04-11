@@ -45,12 +45,12 @@ class GoogleSheetClient {
 
     @Throws(IOException::class)
     fun batchUpdateValues(
-        range: String,
+        range: GoogleSheetRange,
         valueInputOption: GoogleValueInputOption = GoogleValueInputOption.RAW,
         values: List<List<Any>>
     ): BatchUpdateValuesResponse {
         val service = this.getSheets()
-        val body = body(range, values, valueInputOption.value)
+        val body = body(range.changeToString(), values, valueInputOption.value)
         var result: BatchUpdateValuesResponse? = null
         try {
             result = service.spreadsheets().values().batchUpdate(spreadsheetId, body).execute()

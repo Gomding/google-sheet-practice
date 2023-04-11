@@ -1,6 +1,7 @@
 package com.google.sheet.practice.naver.service
 
 import com.google.sheet.practice.googlesheet.external.GoogleSheetClient
+import com.google.sheet.practice.googlesheet.external.GoogleSheetRange
 import com.google.sheet.practice.naver.domain.ProductOrderStatus
 import com.google.sheet.practice.naver.domain.NaverProductOrderDetail
 import com.google.sheet.practice.naver.external.NaverOrderClient
@@ -33,29 +34,27 @@ class NaverOrderService(
 
     private fun originProductOrderIds(): List<Long> {
         val originOrders = googleSheetClient.getGoogleSheetRows("naver!A2:N100")
-        val originProductOrderIds = originOrders.map { it[0].toString().toLong() }
-        return originProductOrderIds
+        return originOrders.map { it[ORDER_ID_SHEET_INDEX].toString().toLong() }
     }
 
-    private fun rangeForUpdate(orderDetailsBeforeDelivery: List<NaverProductOrderDetail>): String {
-        val endColumn = Char(SHEET_START_COLUMN.code + COLUMN_COUNT).toString()
-        val endRow = SHEET_START_ROW + orderDetailsBeforeDelivery.size - 1
-        val range = "$SHEET_RANGE$endColumn$endRow"
-        return range
+    private fun rangeForUpdate(orderDetailsBeforeDelivery: List<NaverProductOrderDetail>): GoogleSheetRange {
+        return GoogleSheetRange.create(
+            sheetName = SHEET_NAME,
+            columnCount = COLUMN_COUNT,
+            rowCount = orderDetailsBeforeDelivery.size - 1
+        )
     }
 
     private fun newProductOrderIds(): List<Long> {
         val ordersResponse = naverOrderClient.lastChangedStatusOrders().data.lastChangeStatuses
         val newOrders = ordersResponse.map { it.toDomain() }
             .filter { it.isPayed() }
-        val newProductOrderIds = newOrders.map { it.productOrderId }
-        return newProductOrderIds
+        return newOrders.map { it.productOrderId }
     }
 
     companion object {
-        private const val SHEET_RANGE = "naver!A2:"
-        private const val SHEET_START_ROW = 2
-        private const val SHEET_START_COLUMN = 'A'
+        private const val SHEET_NAME = "naver"
         private const val COLUMN_COUNT = 14
+        private const val ORDER_ID_SHEET_INDEX = 0
     }
 }
