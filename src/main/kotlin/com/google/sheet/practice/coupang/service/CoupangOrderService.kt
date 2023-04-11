@@ -5,6 +5,7 @@ import com.google.sheet.practice.coupang.domain.CoupangOrder
 import com.google.sheet.practice.coupang.domain.CoupangOrderStatus
 import com.google.sheet.practice.coupang.external.CoupangOrderClient
 import com.google.sheet.practice.googlesheet.external.GoogleSheetClient
+import com.google.sheet.practice.googlesheet.external.GoogleSheetRange
 import org.springframework.stereotype.Service
 
 @Service
@@ -13,7 +14,33 @@ class CoupangOrderService(
     private val currentDateTimeService: CurrentDateTimeService,
     private val googleSheetClient: GoogleSheetClient,
 ) {
-    fun getNewOrders(): List<CoupangOrder> {
+    fun updateOrders() {
+        val originOrders = this.originOrders().filter { it.isBeforeDelivery() }
+        val newOrders = this.newOrders()
+        val orders = newOrders.plus(originOrders).distinctBy { it.orderId }
+        val googleSheetRange = GoogleSheetRange.create(
+            sheetName = SHEET_NAME,
+            columnCount = COLUMN_COUNT,
+            rowCount = orders.size - 1,
+        )
+        googleSheetClient.batchUpdateValues(
+            range = googleSheetRange,
+            values = orders.map { it.flatValues() },
+        )
+    }
+
+    fun originOrders(): List<CoupangOrder> {
+        val coupangOriginOrdersSheetRange = GoogleSheetRange(
+            sheetName = SHEET_NAME,
+            startColumnRow = SHEET_START_COLUMN_ROW,
+            endColumnRow = "N100"
+        )
+        val originOrderIds = googleSheetClient.getGoogleSheetRows(coupangOriginOrdersSheetRange.changeToString())
+            .map { it[0].toString().toLong() }
+        return originOrderIds.map { coupangOrderClient.getOrder(it).data[0].toDomain() }
+    }
+
+    fun newOrders(): List<CoupangOrder> {
         val searchEndDateTime = currentDateTimeService.currentDateTime()
         val searchStartDateTime = searchEndDateTime.minusHours(1)
         val newOrdersResponse = coupangOrderClient.getOrders(
@@ -22,5 +49,12 @@ class CoupangOrderService(
             orderStatus = CoupangOrderStatus.ACCEPT,
         )
         return newOrdersResponse.data.map { it.toDomain() }
+    }
+
+    companion object {
+        private const val SHEET_NAME = "coupang"
+        private const val SHEET_START_COLUMN_ROW = "A2"
+
+        private const val COLUMN_COUNT = 13
     }
 }
