@@ -1,17 +1,13 @@
 package com.google.sheet.practice.coupang.external
 
+import com.google.sheet.practice.coupang.domain.CoupangOrderStatus
 import com.google.sheet.practice.coupang.external.auth.HmacGenerator
 import com.google.sheet.practice.coupang.external.dto.CoupangOrdersResponse
-import com.google.sheet.practice.coupang.domain.CoupangOrderStatus
 import org.apache.http.client.utils.URIBuilder
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.ResponseEntity
+import org.springframework.http.*
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.exchange
-import java.lang.IllegalArgumentException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -23,16 +19,31 @@ class CoupangOrderClient(
     /**
      * [Coupang Open API 주문 분단위 조회 Spec](https://developers.coupangcorp.com/hc/ko/articles/360033792774-%EB%B0%9C%EC%A3%BC%EC%84%9C-%EB%AA%A9%EB%A1%9D-%EC%A1%B0%ED%9A%8C-%EB%B6%84%EB%8B%A8%EC%9C%84-%EC%A0%84%EC%B2%B4-)
      */
-    fun getOrders(searchStartDateTime: LocalDateTime, searchEndDateTime: LocalDateTime): ResponseEntity<CoupangOrdersResponse> {
+    fun getOrders(
+        searchStartDateTime: LocalDateTime,
+        searchEndDateTime: LocalDateTime,
+        orderStatus: CoupangOrderStatus
+    ): CoupangOrdersResponse {
         validateSearchDateTime(searchStartDateTime, searchEndDateTime)
-        val uriBuilder = getOrdersUriBuilder(searchStartDateTime = searchStartDateTime, searchEndDateTime = searchEndDateTime)
+        val uriBuilder = getOrdersUriBuilder(
+            searchStartDateTime = searchStartDateTime,
+            searchEndDateTime = searchEndDateTime,
+            orderStatus = orderStatus
+        )
+        val response: ResponseEntity<CoupangOrdersResponse> = requestGetOrders(uriBuilder)
+        val body = response.body
+            ?: throw RuntimeException("쿠팡 주문 목록을 조회했으나 응답 body가 존재하지 않습니다. statusCode=${response.statusCode}, body=${response.body}")
+        if (body.code != HttpStatus.OK.value()) {
+            throw RuntimeException("쿠팡 주문 목록을 가져오는데 실패했습니다. statusCode=${body.code}, message=${body.message}")
+        }
+        return body
+    }
+
+    private fun requestGetOrders(uriBuilder: URIBuilder): ResponseEntity<CoupangOrdersResponse> {
         val authorization = HmacGenerator.hmac(HttpMethod.GET, uriBuilder.build().toString())
         uriBuilder.setScheme(SCHEMA).setHost(HOST)
-        val headers = headers(authorization)
-        val httpEntity = HttpEntity<Any>(headers)
-        val response: ResponseEntity<CoupangOrdersResponse> = restTemplate.exchange(uriBuilder.build(), HttpMethod.GET, httpEntity)
-        println(response)
-        return response
+        val httpEntity = httpEntity(authorization)
+        return restTemplate.exchange(uriBuilder.build(), HttpMethod.GET, httpEntity)
     }
 
     private fun validateSearchDateTime(searchStartDateTime: LocalDateTime, searchEndDateTime: LocalDateTime) {
@@ -41,15 +52,23 @@ class CoupangOrderClient(
         }
     }
 
-    private fun getOrdersUriBuilder(searchStartDateTime: LocalDateTime, searchEndDateTime: LocalDateTime): URIBuilder {
+    private fun getOrdersUriBuilder(
+        searchStartDateTime: LocalDateTime,
+        searchEndDateTime: LocalDateTime,
+        orderStatus: CoupangOrderStatus
+    ): URIBuilder {
         val path = "/v2/providers/openapi/apis/api/v4/vendors/$VENDOR_ID/ordersheets"
-        val uriBuilder = URIBuilder()
+        return URIBuilder()
             .setPath(path)
             .addParameter("createdAtFrom", searchStartDateTime.format(DATE_TIME_FORMATTER))
             .addParameter("createdAtTo", searchEndDateTime.format(DATE_TIME_FORMATTER))
             .addParameter("searchType", "timeFrame")
-            .addParameter("status", CoupangOrderStatus.INSTRUCT.name)
-        return uriBuilder
+            .addParameter("status", orderStatus.name)
+    }
+
+    private fun httpEntity(authorization: String): HttpEntity<Any> {
+        val headers = headers(authorization)
+        return HttpEntity<Any>(headers)
     }
 
     private fun headers(authorization: String): HttpHeaders {
