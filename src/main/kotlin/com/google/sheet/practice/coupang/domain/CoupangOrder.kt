@@ -31,8 +31,9 @@ data class CoupangOrder(
             receiver.name,
             receiver.addr1,
             receiver.addr2,
-            orderItems.map { it.toFlatString() }.joinToString("\n"),
+            receiver.postCode,
             overseaShipping!!.ordererPhoneNumber,
+            orderItems.map { it.toFlatString() }.joinToString("\n"),
             overseaShipping.personalCustomsClearanceCode
         )
     }

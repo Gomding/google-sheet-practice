@@ -57,7 +57,6 @@ class CoupangOrderService(
     companion object {
         private const val SHEET_NAME = "coupang"
         private const val SHEET_START_COLUMN_ROW = "A2"
-
-        private const val COLUMN_COUNT = 13
+        private const val COLUMN_COUNT = 14
     }
 }
