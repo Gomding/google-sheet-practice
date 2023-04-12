@@ -1,0 +1,25 @@
+name: cron
+
+on:
+  schedule:
+    # 매일 매시간 00분에 실행
+    - cron: '0 * * * *'
+
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle' # https://github.com/actions/setup-java#caching-packages-dependencies
+
+      - name: build gradle
+        run: ./gradlew bootJar
+
+      - name: Run Application
+        run: java -jar google-sheet-practice.jar
