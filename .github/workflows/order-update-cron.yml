@@ -23,4 +23,4 @@ jobs:
         run: ./gradlew bootJar
 
       - name: Run Application
-        run: java -jar google-sheet-practice.jar
+        run: java -jar ./build/libs/google-sheet-practice.jar
