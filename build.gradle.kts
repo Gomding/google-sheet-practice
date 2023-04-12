@@ -70,5 +70,5 @@ tasks.jar {
 tasks.bootJar {
     enabled = true
     archiveFileName.set("google-sheet-practice.jar")
-    mainClass.set("GoogleSheetPracticeApplicationKt")
+    mainClass.set("com.google.sheet.practice.GoogleSheetPracticeApplicationKt")
 }
