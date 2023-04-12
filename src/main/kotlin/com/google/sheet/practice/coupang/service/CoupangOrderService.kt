@@ -4,6 +4,7 @@ import com.google.sheet.practice.common.CurrentDateTimeService
 import com.google.sheet.practice.coupang.domain.CoupangOrder
 import com.google.sheet.practice.coupang.domain.CoupangOrderStatus
 import com.google.sheet.practice.coupang.external.CoupangOrderClient
+import com.google.sheet.practice.googlesheet.GoogleSheetService
 import com.google.sheet.practice.googlesheet.external.GoogleSheetClient
 import com.google.sheet.practice.googlesheet.external.GoogleSheetRange
 import org.springframework.stereotype.Service
@@ -12,10 +13,11 @@ import org.springframework.stereotype.Service
 class CoupangOrderService(
     private val coupangOrderClient: CoupangOrderClient,
     private val currentDateTimeService: CurrentDateTimeService,
+    private val googleSheetService: GoogleSheetService,
     private val googleSheetClient: GoogleSheetClient,
 ) {
     fun updateOrders() {
-        val originOrders = this.originOrders().filter { it.isBeforeDelivery() }
+        val originOrders = this.originOrders()
         val newOrders = this.newOrders()
         val orders = newOrders.plus(originOrders).distinctBy { it.orderId }
         val googleSheetRange = GoogleSheetRange.create(
@@ -23,6 +25,7 @@ class CoupangOrderService(
             columnCount = COLUMN_COUNT,
             rowCount = orders.size - 1,
         )
+        googleSheetService.deleteBy(SHEET_NAME, COLUMN_COUNT, 100)
         googleSheetClient.batchUpdateValues(
             range = googleSheetRange,
             values = orders.map { it.flatValues() },
