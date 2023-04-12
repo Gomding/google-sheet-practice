@@ -42,6 +42,9 @@ class NaverOrderService(
     }
 
     private fun orderDetailsBeforeDelivery(orderIds: List<Long>): List<NaverProductOrderDetail> {
+        if (orderIds.isEmpty()) {
+            return emptyList()
+        }
         val naverProductOrdersDetailRequest = NaverProductOrdersDetailRequest(orderIds)
         val ordersDetailResponse = naverOrderClient.productOrdersDetail(naverProductOrdersDetailRequest)
         return ordersDetailResponse.data.map { it.toDomain() }
