@@ -1,6 +1,5 @@
 package com.google.sheet.practice.coupang.service
 
-import com.google.sheet.practice.common.CurrentDateTimeService
 import com.google.sheet.practice.coupang.domain.CoupangOrder
 import com.google.sheet.practice.coupang.domain.CoupangOrderStatus
 import com.google.sheet.practice.coupang.external.CoupangOrderClient
@@ -8,17 +7,17 @@ import com.google.sheet.practice.googlesheet.GoogleSheetService
 import com.google.sheet.practice.googlesheet.external.GoogleSheetClient
 import com.google.sheet.practice.googlesheet.external.GoogleSheetRange
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 
 @Service
 class CoupangOrderService(
     private val coupangOrderClient: CoupangOrderClient,
-    private val currentDateTimeService: CurrentDateTimeService,
     private val googleSheetService: GoogleSheetService,
     private val googleSheetClient: GoogleSheetClient,
 ) {
-    fun updateOrders() {
+    fun updateOrders(searchEndDateTime: LocalDateTime) {
         val originOrders = this.originOrders()
-        val newOrders = this.newOrders()
+        val newOrders = this.newOrders(searchEndDateTime)
         val orders = newOrders.plus(originOrders).distinctBy { it.orderId }
         val googleSheetRange = GoogleSheetRange.create(
             sheetName = SHEET_NAME,
@@ -43,8 +42,7 @@ class CoupangOrderService(
         return originOrderIds.map { coupangOrderClient.getOrder(it).data[0].toDomain() }
     }
 
-    fun newOrders(): List<CoupangOrder> {
-        val searchEndDateTime = currentDateTimeService.currentDateTime()
+    fun newOrders(searchEndDateTime: LocalDateTime): List<CoupangOrder> {
         val searchStartDateTime = searchEndDateTime.minusHours(1)
         val newOrdersResponse = coupangOrderClient.getOrders(
             searchStartDateTime = searchStartDateTime,

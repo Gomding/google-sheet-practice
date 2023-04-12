@@ -8,6 +8,7 @@ import com.google.sheet.practice.naver.domain.NaverProductOrderDetail
 import com.google.sheet.practice.naver.external.NaverOrderClient
 import com.google.sheet.practice.naver.external.dto.NaverProductOrdersDetailRequest
 import org.springframework.stereotype.Component
+import java.time.LocalDateTime
 
 @Component
 class NaverOrderService(
@@ -15,9 +16,9 @@ class NaverOrderService(
     private val googleSheetService: GoogleSheetService,
     private val googleSheetClient: GoogleSheetClient,
 ) {
-    fun updateRowFromNewDelivery() {
+    fun updateRowFromNewDelivery(searchDateTime: LocalDateTime) {
         val originProductOrderIds = this.originProductOrderIds()
-        val newProductOrderIds = this.newProductOrderIds()
+        val newProductOrderIds = this.newProductOrderIds(searchDateTime)
         val orderIds = originProductOrderIds.plus(newProductOrderIds).distinct()
 
         val orderDetailsBeforeDelivery = orderDetailsBeforeDelivery(orderIds)
@@ -27,18 +28,24 @@ class NaverOrderService(
         googleSheetClient.batchUpdateValues(range = rangeForUpdate, values = values)
     }
 
-    private fun orderDetailsBeforeDelivery(orderIds: List<Long>): List<NaverProductOrderDetail> {
-        val naverProductOrdersDetailRequest = NaverProductOrdersDetailRequest(orderIds)
-        val ordersDetailResponse = naverOrderClient.productOrdersDetail(naverProductOrdersDetailRequest)
-        val ordersDetail = ordersDetailResponse.data.map { it.toDomain() }
-            .filter { it.productOrderStatus == ProductOrderStatus.PAYED }
-        return ordersDetail
-    }
-
     private fun originProductOrderIds(): List<Long> {
         // TODO(2023-04-11): range 를 동적으로 구할 수 있도록 리팩터링 필요
         val originOrders = googleSheetClient.getGoogleSheetRows("naver!A2:N100")
         return originOrders.map { it[ORDER_ID_SHEET_INDEX].toString().toLong() }
+    }
+
+    private fun newProductOrderIds(searchStartDateTime: LocalDateTime): List<Long> {
+        val ordersResponse = naverOrderClient.lastChangedStatusOrders(searchStartDateTime).data.lastChangeStatuses
+        val newOrders = ordersResponse.map { it.toDomain() }
+            .filter { it.isPayed() }
+        return newOrders.map { it.productOrderId }
+    }
+
+    private fun orderDetailsBeforeDelivery(orderIds: List<Long>): List<NaverProductOrderDetail> {
+        val naverProductOrdersDetailRequest = NaverProductOrdersDetailRequest(orderIds)
+        val ordersDetailResponse = naverOrderClient.productOrdersDetail(naverProductOrdersDetailRequest)
+        return ordersDetailResponse.data.map { it.toDomain() }
+            .filter { it.productOrderStatus == ProductOrderStatus.PAYED }
     }
 
     private fun rangeForUpdate(orderDetailsBeforeDelivery: List<NaverProductOrderDetail>): GoogleSheetRange {
@@ -47,13 +54,6 @@ class NaverOrderService(
             columnCount = COLUMN_COUNT,
             rowCount = orderDetailsBeforeDelivery.size - 1
         )
-    }
-
-    private fun newProductOrderIds(): List<Long> {
-        val ordersResponse = naverOrderClient.lastChangedStatusOrders().data.lastChangeStatuses
-        val newOrders = ordersResponse.map { it.toDomain() }
-            .filter { it.isPayed() }
-        return newOrders.map { it.productOrderId }
     }
 
     companion object {
