@@ -1,5 +1,6 @@
 package com.google.sheet.practice.naver.service
 
+import com.google.sheet.practice.googlesheet.GoogleSheetService
 import com.google.sheet.practice.googlesheet.external.GoogleSheetClient
 import com.google.sheet.practice.googlesheet.external.GoogleSheetRange
 import com.google.sheet.practice.naver.domain.ProductOrderStatus
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component
 @Component
 class NaverOrderService(
     private val naverOrderClient: NaverOrderClient,
+    private val googleSheetService: GoogleSheetService,
     private val googleSheetClient: GoogleSheetClient,
 ) {
     fun updateRowFromNewDelivery() {
@@ -21,6 +23,7 @@ class NaverOrderService(
         val orderDetailsBeforeDelivery = orderDetailsBeforeDelivery(orderIds)
         val values = orderDetailsBeforeDelivery.map { it.flatValues() }
         val rangeForUpdate = rangeForUpdate(orderDetailsBeforeDelivery)
+        googleSheetService.deleteBy(SHEET_NAME, COLUMN_COUNT, 100)
         googleSheetClient.batchUpdateValues(range = rangeForUpdate, values = values)
     }
 
