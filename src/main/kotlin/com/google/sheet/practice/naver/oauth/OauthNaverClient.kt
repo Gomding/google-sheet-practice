@@ -16,7 +16,6 @@ class OauthNaverClient(
         val clientSecretSign = this.generateSignature(timestamp)
         val grantType = "client_credentials"
         val type = "SELF"
-        println(clientSecretSign)
         val url = URI.create("https://api.commerce.naver.com/external/v1/oauth2/token?" +
                 "client_id=$clientId&" +
                 "timestamp=$timestamp&" +
