@@ -9,6 +9,11 @@ data class CoupangOrderItem(
     val canceled: Boolean,
 ) {
     fun toFlatString(): String {
-        return "주문 상품 이름:$vendorItemName, 주문 개수:$shippingCount, 총 결제금액:$orderPrice"
+        return """------
+            |주문 상품 이름:$vendorItemName
+            |주문 개수:$shippingCount
+            |총 결제금액:$orderPrice
+            |------
+               """.trimMargin()
     }
 }
