@@ -39,7 +39,8 @@ class CoupangOrderService(
         )
         val originOrderIds = googleSheetClient.getGoogleSheetRows(coupangOriginOrdersSheetRange.changeToString())
             .map { it[0].toString().toLong() }
-        return originOrderIds.map { coupangOrderClient.getOrder(it).data[0].toDomain() }
+        return originOrderIds.mapNotNull { coupangOrderClient.getOrder(it) }
+            .map { it.data[0].toDomain() }
     }
 
     fun newOrders(searchEndDateTime: LocalDateTime): List<CoupangOrder> {
