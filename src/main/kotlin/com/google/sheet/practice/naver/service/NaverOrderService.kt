@@ -3,6 +3,7 @@ package com.google.sheet.practice.naver.service
 import com.google.sheet.practice.googlesheet.GoogleSheetService
 import com.google.sheet.practice.googlesheet.external.GoogleSheetClient
 import com.google.sheet.practice.googlesheet.external.GoogleSheetRange
+import com.google.sheet.practice.line.external.LineNotificationClient
 import com.google.sheet.practice.naver.domain.ProductOrderStatus
 import com.google.sheet.practice.naver.domain.NaverProductOrderDetail
 import com.google.sheet.practice.naver.external.NaverOrderClient
@@ -15,10 +16,12 @@ class NaverOrderService(
     private val naverOrderClient: NaverOrderClient,
     private val googleSheetService: GoogleSheetService,
     private val googleSheetClient: GoogleSheetClient,
+    private val lineNotificationClient: LineNotificationClient,
 ) {
     fun updateRowFromNewDelivery(searchDateTime: LocalDateTime) {
         val originProductOrderIds = this.originProductOrderIds()
         val newProductOrderIds = this.newProductOrderIds(searchDateTime)
+        sendNewOrdersNotification(newProductOrderIds)
         val orderIds = originProductOrderIds.plus(newProductOrderIds).distinct()
 
         val orderDetailsBeforeDelivery = orderDetailsBeforeDelivery(orderIds)
@@ -39,6 +42,26 @@ class NaverOrderService(
         val newOrders = ordersResponse.map { it.toDomain() }
             .filter { it.isPayed() }
         return newOrders.map { it.productOrderId }
+    }
+
+    private fun sendNewOrdersNotification(newOrderIds: List<Long>) {
+        val newProductOrderDetails = this.orderDetailsBeforeDelivery(newOrderIds)
+        newProductOrderDetails.forEach {
+            val message = with(it) {
+                """네이버 쇼핑몰에 새로 주문이 들어왔어요.
+                    |$productName
+                    |$quantity
+                    |
+                    |${shippingAddress.name} / ${shippingAddress.tel1}
+                    |
+                    |${shippingAddress.baseAddress}
+                    |${shippingAddress.detailedAddress}
+                    |
+                    |우편번호 ${shippingAddress.zipCode}
+                """.trimMargin()
+            }
+            lineNotificationClient.sendNotification(message)
+        }
     }
 
     private fun orderDetailsBeforeDelivery(orderIds: List<Long>): List<NaverProductOrderDetail> {

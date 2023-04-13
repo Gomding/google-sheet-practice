@@ -6,6 +6,7 @@ import com.google.sheet.practice.coupang.external.CoupangOrderClient
 import com.google.sheet.practice.googlesheet.GoogleSheetService
 import com.google.sheet.practice.googlesheet.external.GoogleSheetClient
 import com.google.sheet.practice.googlesheet.external.GoogleSheetRange
+import com.google.sheet.practice.line.external.LineNotificationClient
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -14,10 +15,12 @@ class CoupangOrderService(
     private val coupangOrderClient: CoupangOrderClient,
     private val googleSheetService: GoogleSheetService,
     private val googleSheetClient: GoogleSheetClient,
+    private val lineNotificationClient: LineNotificationClient,
 ) {
     fun updateOrders(searchEndDateTime: LocalDateTime) {
         val originOrders = this.originOrders()
         val newOrders = this.newOrders(searchEndDateTime)
+        this.sendNewOrdersNotification(newOrders)
         val orders = newOrders.plus(originOrders).distinctBy { it.orderId }
         val googleSheetRange = GoogleSheetRange.create(
             sheetName = SHEET_NAME,
@@ -29,6 +32,26 @@ class CoupangOrderService(
             range = googleSheetRange,
             values = orders.map { it.flatValues() },
         )
+    }
+
+    private fun sendNewOrdersNotification(newOrders: List<CoupangOrder>) {
+        newOrders.forEach {
+            val orderItemsToString = it.orderItems.map { it.toFlatString() }.joinToString("\n")
+            val message = with(it) {
+                """쿠팡에 새로 주문이 들어왔어요.
+                    |
+                    |${orderItemsToString}
+                    |
+                    |${receiver.name} / ${overseaShipping?.ordererPhoneNumber ?: receiver.safeNumber}
+                    |
+                    |${receiver.addr1}
+                    |${receiver.addr2}
+                    |
+                    |우편번호 ${receiver.postCode}
+                """.trimMargin()
+            }
+            lineNotificationClient.sendNotification(message)
+        }
     }
 
     fun originOrders(): List<CoupangOrder> {
