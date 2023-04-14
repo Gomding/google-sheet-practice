@@ -7,6 +7,7 @@ class NaverProductOrderDetail(
     val quantity: Int,
     val productOrderId: Long,
     val productOrderStatus: ProductOrderStatus,
+    val productId: String,
     val productName: String,
     val productOption: String,
     val totalPaymentAmount: Int,

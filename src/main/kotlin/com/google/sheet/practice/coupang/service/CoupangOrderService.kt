@@ -21,7 +21,7 @@ class CoupangOrderService(
         val originOrders = this.originOrders()
         val newOrders = this.newOrders(searchEndDateTime)
         this.sendNewOrdersNotification(newOrders)
-        val orders = newOrders.plus(originOrders).distinctBy { it.orderId }
+        val orders = newOrders.plus(originOrders).distinctBy { it.orderId }.filter { it.isBeforeDelivery() }
         val googleSheetRange = GoogleSheetRange.create(
             sheetName = SHEET_NAME,
             columnCount = COLUMN_COUNT,

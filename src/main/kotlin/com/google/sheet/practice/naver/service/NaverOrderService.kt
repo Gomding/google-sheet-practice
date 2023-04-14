@@ -57,6 +57,8 @@ class NaverOrderService(
                     |$productName
                     |$quantity 개
                     |
+                    |주문 상품 페이지: https://smartstore.naver.com/hulululu/products/${productId}
+                    |
                     |${shippingAddress.name} / ${shippingAddress.tel1}
                     |
                     |${shippingAddress.baseAddress}
