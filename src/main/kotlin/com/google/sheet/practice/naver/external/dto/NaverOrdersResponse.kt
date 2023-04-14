@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter
 
 data class NaverOrdersResponse(
     val timestamp: String,
-    val data: NaverOrdersDataResponse,
+    val data: NaverOrdersDataResponse?,
     val traceId: String,
 )
 

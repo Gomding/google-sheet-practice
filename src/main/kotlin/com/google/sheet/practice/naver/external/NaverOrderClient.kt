@@ -30,7 +30,7 @@ class NaverOrderClient(
         val headers = HttpHeaders()
         headers.set(HttpHeaders.AUTHORIZATION, "Bearer ${oauthNaverClient.accessToken().access_token}")
         val request = HttpEntity<Any>(headers)
-        val response: ResponseEntity<NaverOrdersResponse> = restTemplate.exchange(url, HttpMethod.GET, request)
+        val response: ResponseEntity<NaverOrdersResponse?> = restTemplate.exchange(url, HttpMethod.GET, request)
         return response.body
             ?: throw IllegalArgumentException("네이버 주문 목록을 불러오지 못했습니다. statusCode = ${response.statusCode}")
     }

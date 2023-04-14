@@ -38,7 +38,11 @@ class NaverOrderService(
     }
 
     private fun newProductOrderIds(searchStartDateTime: LocalDateTime): List<Long> {
-        val ordersResponse = naverOrderClient.lastChangedStatusOrders(searchStartDateTime).data.lastChangeStatuses
+        val lastChangedStatusOrders = naverOrderClient.lastChangedStatusOrders(searchStartDateTime)
+        if (lastChangedStatusOrders.data == null) {
+            return emptyList()
+        }
+        val ordersResponse = lastChangedStatusOrders.data.lastChangeStatuses
         val newOrders = ordersResponse.map { it.toDomain() }
             .filter { it.isPayed() }
         return newOrders.map { it.productOrderId }
