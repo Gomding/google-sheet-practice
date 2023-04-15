@@ -25,7 +25,7 @@ class NaverOrderClient(
 ) {
 
     fun lastChangedStatusOrders(dateTime: LocalDateTime): NaverOrdersResponse {
-        val lastChangedFrom = dateTime.minusHours(33) // naver 에서 KST 기준으로 구하기 때문에 24 + 9시간(KST)을 더 해줌
+        val lastChangedFrom = dateTime.minusHours(24)
         val url = URI.create(
             "https://api.commerce.naver.com/external/v1/pay-order/seller/product-orders/last-changed-statuses?" +
                     "lastChangedFrom=${lastChangedFrom.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))}"
