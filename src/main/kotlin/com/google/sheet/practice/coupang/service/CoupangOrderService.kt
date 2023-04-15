@@ -7,6 +7,7 @@ import com.google.sheet.practice.googlesheet.GoogleSheetService
 import com.google.sheet.practice.googlesheet.external.GoogleSheetClient
 import com.google.sheet.practice.googlesheet.external.GoogleSheetRange
 import com.google.sheet.practice.line.external.LineNotificationClient
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -17,10 +18,13 @@ class CoupangOrderService(
     private val googleSheetClient: GoogleSheetClient,
     private val lineNotificationClient: LineNotificationClient,
 ) {
+    private val logger = LoggerFactory.getLogger(CoupangOrderService::class.java)
+
     fun updateOrders(searchEndDateTime: LocalDateTime) {
         val originOrders = this.originOrders()
         val newOrders = this.newOrders(searchEndDateTime)
         this.sendNewOrdersNotification(newOrders)
+        this.updateNewOrdersConfirm(newOrders)
         val orders = newOrders.plus(originOrders)
             .distinctBy { it.orderId }
             .filter { it.isBeforeDelivery() }
@@ -34,6 +38,20 @@ class CoupangOrderService(
             range = googleSheetRange,
             values = orders.map { it.flatValues() },
         )
+    }
+
+    private fun updateNewOrdersConfirm(newOrders: List<CoupangOrder>) {
+        if (newOrders.isNotEmpty()) {
+            val response = coupangOrderClient.updateOrdersConfirm(newOrders.map { it.shipmentBoxId })
+            val successOrderConfirmResults = response.data.responseList.filter { it.succeed }
+            val failOrderConfirmResults = response.data.responseList.filter { !it.succeed }
+            logger.info("쿠팡 신규 주문 발주 확인 처리. 발주 확인 건수: ${successOrderConfirmResults.size}, " +
+                    "발주 확인 주문 ID: ${successOrderConfirmResults.map { it.shipmentBoxId }}")
+            if (failOrderConfirmResults.isNotEmpty()) {
+                logger.error("쿠팡 신규 주문 발주 확인 처리 실패. 발주 확인 실패 건수: ${failOrderConfirmResults.size}, " +
+                        "발주 확인 실패 주문 ID: ${failOrderConfirmResults.map { it.shipmentBoxId }}")
+            }
+        }
     }
 
     private fun sendNewOrdersNotification(newOrders: List<CoupangOrder>) {
@@ -69,7 +87,7 @@ class CoupangOrderService(
     }
 
     fun newOrders(searchEndDateTime: LocalDateTime): List<CoupangOrder> {
-        val searchStartDateTime = searchEndDateTime.minusHours(2)
+        val searchStartDateTime = searchEndDateTime.minusHours(24)
         if (searchStartDateTime.dayOfMonth != searchEndDateTime.dayOfMonth) {
             val midnight = LocalDateTime.of(
                 searchEndDateTime.year,

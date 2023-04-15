@@ -2,8 +2,10 @@ package com.google.sheet.practice.coupang.external
 
 import com.google.sheet.practice.coupang.domain.CoupangOrderStatus
 import com.google.sheet.practice.coupang.external.auth.HmacGenerator
+import com.google.sheet.practice.coupang.external.dto.CoupangOrderConfirmResponse
 import com.google.sheet.practice.coupang.external.dto.CoupangOrdersResponse
 import com.google.sheet.practice.coupang.external.dto.CoupangSingleOrderResponse
+import com.google.sheet.practice.coupang.external.dto.CoupangUpdateNewOrderStatusRequest
 import org.apache.http.client.utils.URIBuilder
 import org.springframework.http.*
 import org.springframework.stereotype.Component
@@ -22,9 +24,9 @@ class CoupangOrderClient(
         try {
             val path = "/v2/providers/openapi/apis/api/v4/vendors/$VENDOR_ID/$orderId/ordersheets"
             val uriBuilder = URIBuilder().setPath(path)
-            val authorization = HmacGenerator.hmac(HttpMethod.GET, uriBuilder.build().toString())
+            val authorization = authorization(HttpMethod.GET, uriBuilder)
             uriBuilder.setScheme(SCHEMA).setHost(HOST)
-            val httpEntity = httpEntity(authorization)
+            val httpEntity = httpEntity<Any>(authorization = authorization)
             val response: ResponseEntity<CoupangSingleOrderResponse> =
                 restTemplate.exchange(uriBuilder.build(), HttpMethod.GET, httpEntity)
             val body = response.body
@@ -62,11 +64,14 @@ class CoupangOrderClient(
     }
 
     private fun requestGetOrders(uriBuilder: URIBuilder): ResponseEntity<CoupangOrdersResponse> {
-        val authorization = HmacGenerator.hmac(HttpMethod.GET, uriBuilder.build().toString())
+        val authorization = authorization(HttpMethod.GET, uriBuilder)
+        val httpEntity = httpEntity<Any>(authorization = authorization)
         uriBuilder.setScheme(SCHEMA).setHost(HOST)
-        val httpEntity = httpEntity(authorization)
         return restTemplate.exchange(uriBuilder.build(), HttpMethod.GET, httpEntity)
     }
+
+    private fun authorization(httpMethod: HttpMethod, uriBuilder: URIBuilder) =
+        HmacGenerator.hmac(httpMethod, uriBuilder.build().toString())
 
     private fun validateSearchDateTime(searchStartDateTime: LocalDateTime, searchEndDateTime: LocalDateTime) {
         if (searchStartDateTime.isAfter(searchEndDateTime)) {
@@ -88,9 +93,9 @@ class CoupangOrderClient(
             .addParameter("status", orderStatus.name)
     }
 
-    private fun httpEntity(authorization: String): HttpEntity<Any> {
+    private fun <T> httpEntity(authorization: String, body: T? = null): HttpEntity<T> {
         val headers = headers(authorization)
-        return HttpEntity<Any>(headers)
+        return HttpEntity<T>(body, headers)
     }
 
     private fun headers(authorization: String): HttpHeaders {
@@ -98,6 +103,19 @@ class CoupangOrderClient(
         headers.set(HttpHeaders.AUTHORIZATION, authorization)
         headers.set(HttpHeaders.CONTENT_TYPE, "application/json")
         return headers
+    }
+
+    fun updateOrdersConfirm(shipmentBoxIds: List<Long>): CoupangOrderConfirmResponse {
+        val path = "/v2/providers/openapi/apis/api/v4/vendors/$VENDOR_ID/ordersheets/acknowledgement"
+        val uriBuilder = URIBuilder()
+            .setPath(path)
+        val authorization = authorization(HttpMethod.PUT, uriBuilder)
+        val body = CoupangUpdateNewOrderStatusRequest(vendorId = VENDOR_ID, shipmentBoxIds = shipmentBoxIds)
+        val httpEntity = httpEntity(body = body, authorization = authorization)
+        uriBuilder.setScheme(SCHEMA).setHost(HOST)
+        val response: ResponseEntity<CoupangOrderConfirmResponse> =
+            restTemplate.exchange(uriBuilder.build(), HttpMethod.PUT, httpEntity)
+        return response.body?: throw java.lang.IllegalArgumentException("쿠팡 주문 상태를 상품 준비중으로 변경하는데 실패했습니다.")
     }
 
     companion object {
