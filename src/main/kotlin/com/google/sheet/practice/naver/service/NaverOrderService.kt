@@ -4,10 +4,11 @@ import com.google.sheet.practice.googlesheet.GoogleSheetService
 import com.google.sheet.practice.googlesheet.external.GoogleSheetClient
 import com.google.sheet.practice.googlesheet.external.GoogleSheetRange
 import com.google.sheet.practice.line.external.LineNotificationClient
-import com.google.sheet.practice.naver.domain.ProductOrderStatus
 import com.google.sheet.practice.naver.domain.NaverProductOrderDetail
+import com.google.sheet.practice.naver.domain.ProductOrderStatus
 import com.google.sheet.practice.naver.external.NaverOrderClient
 import com.google.sheet.practice.naver.external.dto.NaverProductOrdersDetailRequest
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
@@ -18,17 +19,33 @@ class NaverOrderService(
     private val googleSheetClient: GoogleSheetClient,
     private val lineNotificationClient: LineNotificationClient,
 ) {
+    private val logger = LoggerFactory.getLogger(NaverOrderService::class.java)
+
     fun updateRowFromNewDelivery(searchDateTime: LocalDateTime) {
         val originProductOrderIds = this.originProductOrderIds()
-        val newProductOrderIds = this.newProductOrderIds(searchDateTime)
-        sendNewOrdersNotification(newProductOrderIds)
+        val newProductOrderIds = this.newProductOrderIds(searchDateTime).filter { !originProductOrderIds.contains(it) }
+        this.sendNewOrdersNotification(newProductOrderIds)
+        this.newProductOrderConfirm(newProductOrderIds)
         val orderIds = originProductOrderIds.plus(newProductOrderIds).distinct()
 
-        val orderDetailsBeforeDelivery = orderDetailsBeforeDelivery(orderIds)
+        val orderDetailsBeforeDelivery = this.orderDetailsBeforeDelivery(orderIds)
         val values = orderDetailsBeforeDelivery.map { it.flatValues() }
         val rangeForUpdate = rangeForUpdate(orderDetailsBeforeDelivery)
         googleSheetService.deleteBy(SHEET_NAME, COLUMN_COUNT, 100)
         googleSheetClient.batchUpdateValues(range = rangeForUpdate, values = values)
+    }
+
+    private fun newProductOrderConfirm(newProductOrderIds: List<Long>) {
+        if (newProductOrderIds.isNotEmpty()) {
+            val response = naverOrderClient.productOrderConfirm(newProductOrderIds.map { it.toString() })
+            logger.info("네이버 신규 주문 발주 확인 처리. 발주 확인 건수: ${response.data.successProductOrderInfos.size}, " +
+                    "발주 확인 주문 ID: ${response.data.successProductOrderInfos.map { it.productOrderId }}")
+            if (response.data.failProductOrderInfos.isNotEmpty()) {
+                logger.error("네이버 신규 주문 발주 확인 실패. 발주 확인 실패 건수: ${response.data.failProductOrderInfos.size}, " +
+                        "발주 확인 주문 ID: ${response.data.failProductOrderInfos.map { it.productOrderId }}"
+                )
+            }
+        }
     }
 
     private fun originProductOrderIds(): List<Long> {

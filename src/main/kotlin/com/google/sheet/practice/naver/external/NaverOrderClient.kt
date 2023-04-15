@@ -1,8 +1,6 @@
 package com.google.sheet.practice.naver.external
 
-import com.google.sheet.practice.naver.external.dto.NaverOrdersResponse
-import com.google.sheet.practice.naver.external.dto.NaverProductOrdersDetailRequest
-import com.google.sheet.practice.naver.external.dto.NaverProductOrdersDetailResponse
+import com.google.sheet.practice.naver.external.dto.*
 import com.google.sheet.practice.naver.oauth.OauthNaverClient
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -47,5 +45,17 @@ class NaverOrderClient(
             restTemplate.exchange(url, HttpMethod.POST, request)
         return response.body
             ?: throw IllegalArgumentException("네이버 주문 목록 상세를 불러오지 못했습니다. statusCode = ${response.statusCode}")
+    }
+
+    fun productOrderConfirm(productOrderIds: List<String>): NaverProductOrderConfirmResponse {
+        val url = URI.create("https://api.commerce.naver.com/external/v1/pay-order/seller/product-orders/confirm")
+        val headers = HttpHeaders()
+        headers.set(HttpHeaders.AUTHORIZATION, "Bearer ${oauthNaverClient.accessToken().access_token}")
+        val body = NaverProductOrderConfirmRequest(productOrderIds = productOrderIds)
+        val request = HttpEntity<Any>(body, headers)
+        val response: ResponseEntity<NaverProductOrderConfirmResponse> =
+            restTemplate.exchange(url, HttpMethod.POST, request)
+        return response.body
+            ?: throw IllegalArgumentException("네이버 주문 발주 확인 처리 요청이 실패했습니다. statusCode = ${response.statusCode}")
     }
 }
