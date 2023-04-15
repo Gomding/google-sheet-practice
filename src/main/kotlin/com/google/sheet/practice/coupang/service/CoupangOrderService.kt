@@ -21,7 +21,9 @@ class CoupangOrderService(
         val originOrders = this.originOrders()
         val newOrders = this.newOrders(searchEndDateTime)
         this.sendNewOrdersNotification(newOrders)
-        val orders = newOrders.plus(originOrders).distinctBy { it.orderId }.filter { it.isBeforeDelivery() }
+        val orders = newOrders.plus(originOrders)
+            .distinctBy { it.orderId }
+            .filter { it.isBeforeDelivery() }
         val googleSheetRange = GoogleSheetRange.create(
             sheetName = SHEET_NAME,
             columnCount = COLUMN_COUNT,
@@ -67,7 +69,28 @@ class CoupangOrderService(
     }
 
     fun newOrders(searchEndDateTime: LocalDateTime): List<CoupangOrder> {
-        val searchStartDateTime = searchEndDateTime.minusHours(1)
+        val searchStartDateTime = searchEndDateTime.minusHours(2)
+        if (searchStartDateTime.dayOfMonth != searchEndDateTime.dayOfMonth) {
+            val midnight = LocalDateTime.of(
+                searchEndDateTime.year,
+                searchEndDateTime.month,
+                searchEndDateTime.dayOfMonth,
+                0,
+                0,
+            )
+            val beforeMidnight = midnight.minusNanos(1)
+            val newOrdersMidnightToNow = coupangOrderClient.getOrders(
+                searchStartDateTime = midnight,
+                searchEndDateTime = searchEndDateTime,
+                orderStatus = CoupangOrderStatus.ACCEPT,
+            ).data.map { it.toDomain() }
+            val newOrdersBeforeDay = coupangOrderClient.getOrders(
+                searchStartDateTime = searchStartDateTime,
+                searchEndDateTime = beforeMidnight,
+                orderStatus = CoupangOrderStatus.ACCEPT,
+            ).data.map { it.toDomain() }
+            return newOrdersMidnightToNow.plus(newOrdersBeforeDay)
+        }
         val newOrdersResponse = coupangOrderClient.getOrders(
             searchStartDateTime = searchStartDateTime,
             searchEndDateTime = searchEndDateTime,
