@@ -9,6 +9,8 @@ import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.stereotype.Component
+import java.util.*
+
 
 @EnableBatchProcessing
 @SpringBootApplication
@@ -26,8 +28,9 @@ class GoogleSheetApplicationRunner(
     private val currentDateTimeService: CurrentDateTimeService,
 ) : ApplicationRunner {
     override fun run(args: ApplicationArguments?) {
-        val currentDateTime = currentDateTimeService.currentDateTime()
-        naverOrderService.updateRowFromNewDelivery(currentDateTime)
-        coupangOrderService.updateOrders(currentDateTime)
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+        val currentKstDateTime = currentDateTimeService.currentDateTime().plusHours(9)
+        naverOrderService.updateRowFromNewDelivery(currentKstDateTime)
+        coupangOrderService.updateOrders(currentKstDateTime)
     }
 }
