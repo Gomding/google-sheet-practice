@@ -15,6 +15,9 @@ import java.net.URI
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+/**
+ * https://apicenter.commerce.naver.com/ko/basic/commerce-api
+ */
 @Component
 class NaverOrderClient(
     private val restTemplate: RestTemplate = RestTemplate(),
