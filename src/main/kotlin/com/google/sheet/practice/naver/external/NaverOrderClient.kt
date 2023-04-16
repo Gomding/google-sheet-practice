@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.exchange
-import java.net.URI
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -26,10 +25,11 @@ class NaverOrderClient(
     fun lastChangedStatusOrders(dateTime: LocalDateTime): NaverOrdersResponse {
         val lastChangedFrom = dateTime.minusHours(24)
         val path = "/external/v1/pay-order/seller/product-orders/last-changed-statuses"
-        val url = URIBuilder()
-            .setHost(HOST)
-            .setPath(path)
-            .addParameter("lastChangedFrom", lastChangedFrom.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")))
+        val url = baseUriBuilder(path)
+            .addParameter(
+                "lastChangedFrom",
+                lastChangedFrom.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
+            )
             .build()
         val request = httpEntity<Any>()
         val response: ResponseEntity<NaverOrdersResponse?> = restTemplate.exchange(url, HttpMethod.GET, request)
@@ -38,7 +38,8 @@ class NaverOrderClient(
     }
 
     fun productOrdersDetail(requestBody: NaverProductOrdersDetailRequest): NaverProductOrdersDetailResponse {
-        val url = URI.create("$HOST/external/v1/pay-order/seller/product-orders/query")
+        val path = "/external/v1/pay-order/seller/product-orders/query"
+        val url = baseUriBuilder(path).build()
         val request = httpEntity(body = requestBody)
         val response: ResponseEntity<NaverProductOrdersDetailResponse> =
             restTemplate.exchange(url, HttpMethod.POST, request)
@@ -47,13 +48,21 @@ class NaverOrderClient(
     }
 
     fun productOrderConfirm(productOrderIds: List<String>): NaverProductOrderConfirmResponse {
-        val url = URI.create("$HOST/external/v1/pay-order/seller/product-orders/confirm")
+        val path = "/external/v1/pay-order/seller/product-orders/confirm"
+        val url = baseUriBuilder(path).build()
         val body = NaverProductOrderConfirmRequest(productOrderIds = productOrderIds)
         val request = httpEntity(body)
         val response: ResponseEntity<NaverProductOrderConfirmResponse> =
             restTemplate.exchange(url, HttpMethod.POST, request)
         return response.body
             ?: throw IllegalArgumentException("네이버 주문 발주 확인 처리 요청이 실패했습니다. statusCode = ${response.statusCode}")
+    }
+
+    private fun baseUriBuilder(path: String): URIBuilder {
+        return URIBuilder()
+            .setScheme(SCHEMA)
+            .setHost(HOST)
+            .setPath(path)
     }
 
     private fun <T> httpEntity(body: T? = null): HttpEntity<T> {
@@ -67,6 +76,7 @@ class NaverOrderClient(
     }
 
     companion object {
-        private const val HOST = "https://api.commerce.naver.com"
+        private const val SCHEMA = "https"
+        private const val HOST = "api.commerce.naver.com"
     }
 }
