@@ -2,6 +2,7 @@ package com.google.sheet.practice.naver.external
 
 import com.google.sheet.practice.naver.external.dto.*
 import com.google.sheet.practice.naver.oauth.OauthNaverClient
+import org.apache.http.client.utils.URIBuilder
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -24,23 +25,21 @@ class NaverOrderClient(
 
     fun lastChangedStatusOrders(dateTime: LocalDateTime): NaverOrdersResponse {
         val lastChangedFrom = dateTime.minusHours(24)
-        val url = URI.create(
-            "https://api.commerce.naver.com/external/v1/pay-order/seller/product-orders/last-changed-statuses?" +
-                    "lastChangedFrom=${lastChangedFrom.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))}"
-        )
-        val headers = HttpHeaders()
-        headers.set(HttpHeaders.AUTHORIZATION, "Bearer ${oauthNaverClient.accessToken().access_token}")
-        val request = HttpEntity<Any>(headers)
+        val path = "/external/v1/pay-order/seller/product-orders/last-changed-statuses"
+        val url = URIBuilder()
+            .setHost(HOST)
+            .setPath(path)
+            .addParameter("lastChangedFrom", lastChangedFrom.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")))
+            .build()
+        val request = httpEntity<Any>()
         val response: ResponseEntity<NaverOrdersResponse?> = restTemplate.exchange(url, HttpMethod.GET, request)
         return response.body
             ?: throw IllegalArgumentException("네이버 주문 목록을 불러오지 못했습니다. statusCode = ${response.statusCode}")
     }
 
-    fun productOrdersDetail(naverProductOrdersDetailRequest: NaverProductOrdersDetailRequest): NaverProductOrdersDetailResponse {
-        val url = URI.create("https://api.commerce.naver.com/external/v1/pay-order/seller/product-orders/query")
-        val headers = HttpHeaders()
-        headers.set(HttpHeaders.AUTHORIZATION, "Bearer ${oauthNaverClient.accessToken().access_token}")
-        val request = HttpEntity<Any>(naverProductOrdersDetailRequest, headers)
+    fun productOrdersDetail(requestBody: NaverProductOrdersDetailRequest): NaverProductOrdersDetailResponse {
+        val url = URI.create("$HOST/external/v1/pay-order/seller/product-orders/query")
+        val request = httpEntity(body = requestBody)
         val response: ResponseEntity<NaverProductOrdersDetailResponse> =
             restTemplate.exchange(url, HttpMethod.POST, request)
         return response.body
@@ -48,14 +47,26 @@ class NaverOrderClient(
     }
 
     fun productOrderConfirm(productOrderIds: List<String>): NaverProductOrderConfirmResponse {
-        val url = URI.create("https://api.commerce.naver.com/external/v1/pay-order/seller/product-orders/confirm")
-        val headers = HttpHeaders()
-        headers.set(HttpHeaders.AUTHORIZATION, "Bearer ${oauthNaverClient.accessToken().access_token}")
+        val url = URI.create("$HOST/external/v1/pay-order/seller/product-orders/confirm")
         val body = NaverProductOrderConfirmRequest(productOrderIds = productOrderIds)
-        val request = HttpEntity<Any>(body, headers)
+        val request = httpEntity(body)
         val response: ResponseEntity<NaverProductOrderConfirmResponse> =
             restTemplate.exchange(url, HttpMethod.POST, request)
         return response.body
             ?: throw IllegalArgumentException("네이버 주문 발주 확인 처리 요청이 실패했습니다. statusCode = ${response.statusCode}")
+    }
+
+    private fun <T> httpEntity(body: T? = null): HttpEntity<T> {
+        val headers = HttpHeaders()
+        headers.set(HttpHeaders.AUTHORIZATION, this.authorizationHeaderValue())
+        return HttpEntity<T>(body, headers)
+    }
+
+    private fun authorizationHeaderValue(): String {
+        return "Bearer ${oauthNaverClient.accessToken().access_token}"
+    }
+
+    companion object {
+        private const val HOST = "https://api.commerce.naver.com"
     }
 }
