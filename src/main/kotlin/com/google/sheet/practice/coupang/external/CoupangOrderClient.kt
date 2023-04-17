@@ -21,14 +21,13 @@ class CoupangOrderClient(
 ) {
 
     fun getOrder(orderId: Long): CoupangSingleOrderResponse? {
+        val path = "/v2/providers/openapi/apis/api/v4/vendors/$VENDOR_ID/$orderId/ordersheets"
+        val uriBuilder = baseUriBuilder(path)
+        val httpMethod = HttpMethod.GET
+        val httpEntity = httpEntity<Any>(authorization = authorization(httpMethod, path))
         try {
-            val path = "/v2/providers/openapi/apis/api/v4/vendors/$VENDOR_ID/$orderId/ordersheets"
-            val uriBuilder = URIBuilder().setPath(path)
-            val authorization = authorization(HttpMethod.GET, uriBuilder)
-            uriBuilder.setScheme(SCHEMA).setHost(HOST)
-            val httpEntity = httpEntity<Any>(authorization = authorization)
             val response: ResponseEntity<CoupangSingleOrderResponse> =
-                restTemplate.exchange(uriBuilder.build(), HttpMethod.GET, httpEntity)
+                restTemplate.exchange(uriBuilder.build(), httpMethod, httpEntity)
             val body = response.body
                 ?: throw RuntimeException("쿠팡 단건 주문을 조회했으나 응답 body가 존재하지 않습니다. statusCode=${response.statusCode}, body=${response.body}")
             if (body.code != HttpStatus.OK.value()) {
@@ -48,13 +47,13 @@ class CoupangOrderClient(
         searchEndDateTime: LocalDateTime,
         orderStatus: CoupangOrderStatus
     ): CoupangOrdersResponse {
-        validateSearchDateTime(searchStartDateTime, searchEndDateTime)
-        val uriBuilder = getOrdersUriBuilder(
-            searchStartDateTime = searchStartDateTime,
-            searchEndDateTime = searchEndDateTime,
-            orderStatus = orderStatus
-        )
-        val response: ResponseEntity<CoupangOrdersResponse> = requestGetOrders(uriBuilder)
+        this.validateSearchDateTime(searchStartDateTime, searchEndDateTime)
+        val uriBuilder = createPathGetOrdersUriBuilder(searchStartDateTime, searchEndDateTime, orderStatus)
+        val httpMethod = HttpMethod.GET
+        val httpEntity = httpEntity<Any>(authorization = authorization(httpMethod, uriBuilder.build().toString()))
+        val uri = uriBuilder.setScheme(SCHEMA).setHost(HOST).build()
+        val response: ResponseEntity<CoupangOrdersResponse> =
+            restTemplate.exchange(uri, httpMethod, httpEntity)
         val body = response.body
             ?: throw RuntimeException("쿠팡 주문 목록을 조회했으나 응답 body가 존재하지 않습니다. statusCode=${response.statusCode}, body=${response.body}")
         if (body.code != HttpStatus.OK.value()) {
@@ -63,15 +62,16 @@ class CoupangOrderClient(
         return body
     }
 
-    private fun requestGetOrders(uriBuilder: URIBuilder): ResponseEntity<CoupangOrdersResponse> {
-        val authorization = authorization(HttpMethod.GET, uriBuilder)
-        val httpEntity = httpEntity<Any>(authorization = authorization)
-        uriBuilder.setScheme(SCHEMA).setHost(HOST)
-        return restTemplate.exchange(uriBuilder.build(), HttpMethod.GET, httpEntity)
-    }
-
-    private fun authorization(httpMethod: HttpMethod, uriBuilder: URIBuilder) =
-        HmacGenerator.hmac(httpMethod, uriBuilder.build().toString())
+    private fun createPathGetOrdersUriBuilder(
+        searchStartDateTime: LocalDateTime,
+        searchEndDateTime: LocalDateTime,
+        orderStatus: CoupangOrderStatus
+    ): URIBuilder = URIBuilder()
+        .setPath("/v2/providers/openapi/apis/api/v4/vendors/$VENDOR_ID/ordersheets")
+        .addParameter("createdAtFrom", searchStartDateTime.format(DATE_TIME_FORMATTER))
+        .addParameter("createdAtTo", searchEndDateTime.format(DATE_TIME_FORMATTER))
+        .addParameter("searchType", "timeFrame")
+        .addParameter("status", orderStatus.name)
 
     private fun validateSearchDateTime(searchStartDateTime: LocalDateTime, searchEndDateTime: LocalDateTime) {
         if (searchStartDateTime.isAfter(searchEndDateTime)) {
@@ -79,19 +79,26 @@ class CoupangOrderClient(
         }
     }
 
-    private fun getOrdersUriBuilder(
-        searchStartDateTime: LocalDateTime,
-        searchEndDateTime: LocalDateTime,
-        orderStatus: CoupangOrderStatus
-    ): URIBuilder {
-        val path = "/v2/providers/openapi/apis/api/v4/vendors/$VENDOR_ID/ordersheets"
+    fun updateOrdersConfirm(shipmentBoxIds: List<Long>): CoupangOrderConfirmResponse {
+        val path = "/v2/providers/openapi/apis/api/v4/vendors/$VENDOR_ID/ordersheets/acknowledgement"
+        val httpMethod = HttpMethod.PUT
+        val body = CoupangUpdateNewOrderStatusRequest(vendorId = VENDOR_ID, shipmentBoxIds = shipmentBoxIds)
+        val httpEntity = httpEntity(body = body, authorization = authorization(httpMethod, path))
+        val uriBuilder = baseUriBuilder(path)
+        val response: ResponseEntity<CoupangOrderConfirmResponse> =
+            restTemplate.exchange(uriBuilder.build(), httpMethod, httpEntity)
+        return response.body ?: throw java.lang.IllegalArgumentException("쿠팡 주문 상태를 상품 준비중으로 변경하는데 실패했습니다.")
+    }
+
+    private fun baseUriBuilder(path: String): URIBuilder {
         return URIBuilder()
             .setPath(path)
-            .addParameter("createdAtFrom", searchStartDateTime.format(DATE_TIME_FORMATTER))
-            .addParameter("createdAtTo", searchEndDateTime.format(DATE_TIME_FORMATTER))
-            .addParameter("searchType", "timeFrame")
-            .addParameter("status", orderStatus.name)
+            .setScheme(SCHEMA)
+            .setHost(HOST)
     }
+
+    private fun authorization(httpMethod: HttpMethod, path: String) =
+        HmacGenerator.hmac(httpMethod, path)
 
     private fun <T> httpEntity(authorization: String, body: T? = null): HttpEntity<T> {
         val headers = headers(authorization)
@@ -105,26 +112,10 @@ class CoupangOrderClient(
         return headers
     }
 
-    fun updateOrdersConfirm(shipmentBoxIds: List<Long>): CoupangOrderConfirmResponse {
-        val path = "/v2/providers/openapi/apis/api/v4/vendors/$VENDOR_ID/ordersheets/acknowledgement"
-        val uriBuilder = URIBuilder()
-            .setPath(path)
-        val authorization = authorization(HttpMethod.PUT, uriBuilder)
-        val body = CoupangUpdateNewOrderStatusRequest(vendorId = VENDOR_ID, shipmentBoxIds = shipmentBoxIds)
-        val httpEntity = httpEntity(body = body, authorization = authorization)
-        uriBuilder.setScheme(SCHEMA).setHost(HOST)
-        val response: ResponseEntity<CoupangOrderConfirmResponse> =
-            restTemplate.exchange(uriBuilder.build(), HttpMethod.PUT, httpEntity)
-        return response.body?: throw java.lang.IllegalArgumentException("쿠팡 주문 상태를 상품 준비중으로 변경하는데 실패했습니다.")
-    }
-
     companion object {
         private const val HOST = "api-gateway.coupang.com"
         private const val SCHEMA = "https"
-
-        // authorization api info
         private const val VENDOR_ID = "A00332047"
-
         private val DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
     }
 }
