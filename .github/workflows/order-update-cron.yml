@@ -4,6 +4,7 @@ on:
   schedule:
     # 매일 매시간 00분에 실행
     - cron: '0 * * * *'
+  # workflow_dispatch - 수동 실행을 위해 사용
   workflow_dispatch:
 
 jobs:
