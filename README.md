@@ -1,5 +1,5 @@
-[구글 스프레드 시트 API 문서](https://developers.google.com/sheets/api/guides/concepts?hl=ko)
-[구글 스프렏드 시트 Quick Start 문서](https://developers.google.com/sheets/api/quickstart/java?hl=ko)
+- [구글 스프레드 시트 API 문서](https://developers.google.com/sheets/api/guides/concepts?hl=ko)
+- [구글 스프레드 시트 Quick Start 문서](https://developers.google.com/sheets/api/quickstart/java?hl=ko)
 
 스프레드 시트
 - 스프레드 시트 리소스는 모든 스프레드 시트를 나타냄
