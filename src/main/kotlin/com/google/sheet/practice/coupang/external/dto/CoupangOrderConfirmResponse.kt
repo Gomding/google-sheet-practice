@@ -7,7 +7,7 @@ data class CoupangOrderConfirmResponse(
 )
 
 data class CoupangOrderConfirmDataResponse(
-    val responseKey: String,
+    val responseKey: Int,
     val responseCode: Int,
     val responseMessage: String,
     val responseList: List<CoupangOrderConfirmInfoResponse>,
