@@ -71,7 +71,7 @@ class NaverOrderService(
             val message = with(it) {
                 """네이버 쇼핑몰에 새로 주문이 들어왔어요.
                     |
-                    |$productName
+                    |$productName - $productOption
                     |$quantity 개
                     |
                     |주문 상품 페이지: https://smartstore.naver.com/hulululu/products/${productId}
