@@ -49,7 +49,7 @@ data class NaverProductOrderDetailResponse(
 data class OrderShippingAddressResponse(
     val zipCode: String,
     val baseAddress: String,
-    val detailedAddress: String,
+    val detailedAddress: String?,
     val tel1: String,
     val name: String,
 ) {
@@ -57,7 +57,7 @@ data class OrderShippingAddressResponse(
         return NaverOrderShippingAddress(
             zipCode = this.zipCode,
             baseAddress = this.baseAddress,
-            detailedAddress = this.detailedAddress,
+            detailedAddress = this.detailedAddress?: "",
             tel1 = this.tel1,
             name = this.name,
         )

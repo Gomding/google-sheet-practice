@@ -39,10 +39,12 @@ class NaverOrderService(
         if (newProductOrderIds.isNotEmpty()) {
             val response = naverOrderClient.productOrderConfirm(newProductOrderIds.map { it.toString() })
             logger.info("네이버 신규 주문 발주 확인 처리. 발주 확인 건수: ${response.data.successProductOrderInfos.size}, " +
-                    "발주 확인 주문 ID: ${response.data.successProductOrderInfos.map { it.productOrderId }}")
+                    "발주 확인 주문 ID: ${response.data.successProductOrderInfos.map { it.productOrderId }}"
+            )
             if (response.data.failProductOrderInfos.isNotEmpty()) {
-                logger.error("네이버 신규 주문 발주 확인 실패. 발주 확인 실패 건수: ${response.data.failProductOrderInfos.size}, " +
-                        "발주 확인 주문 ID: ${response.data.failProductOrderInfos.map { it.productOrderId }}"
+                logger.error(
+                    "네이버 신규 주문 발주 확인 실패. 발주 확인 실패 건수: ${response.data.failProductOrderInfos.size}, " +
+                            "발주 확인 주문 ID: ${response.data.failProductOrderInfos.map { it.productOrderId }}"
                 )
             }
         }
