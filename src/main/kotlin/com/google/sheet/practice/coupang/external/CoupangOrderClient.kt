@@ -2,10 +2,7 @@ package com.google.sheet.practice.coupang.external
 
 import com.google.sheet.practice.coupang.domain.CoupangOrderStatus
 import com.google.sheet.practice.coupang.external.auth.HmacGenerator
-import com.google.sheet.practice.coupang.external.dto.CoupangOrderConfirmResponse
-import com.google.sheet.practice.coupang.external.dto.CoupangOrdersResponse
-import com.google.sheet.practice.coupang.external.dto.CoupangSingleOrderResponse
-import com.google.sheet.practice.coupang.external.dto.CoupangUpdateNewOrderStatusRequest
+import com.google.sheet.practice.coupang.external.dto.*
 import org.apache.http.client.utils.URIBuilder
 import org.springframework.http.*
 import org.springframework.stereotype.Component
@@ -14,7 +11,11 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.exchange
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
+/**
+ * [쿠팡윙 API Docs](https://developers.coupangcorp.com/hc/ko/categories/360002105414-API-Docs)
+ */
 @Component
 class CoupangOrderClient(
     private val restTemplate: RestTemplate = RestTemplate(),
@@ -87,7 +88,24 @@ class CoupangOrderClient(
         val uriBuilder = baseUriBuilder(path)
         val response: ResponseEntity<CoupangOrderConfirmResponse> =
             restTemplate.exchange(uriBuilder.build(), httpMethod, httpEntity)
-        return response.body ?: throw java.lang.IllegalArgumentException("쿠팡 주문 상태를 상품 준비중으로 변경하는데 실패했습니다.")
+        return response.body ?: throw IllegalArgumentException("쿠팡 주문 상태를 상품 준비중으로 변경하는데 실패했습니다.")
+    }
+
+    fun getCanceledOrders(searchEndDateTime: LocalDateTime): CoupangCanceledOrdersResponse {
+        val path = "/v2/providers/openapi/apis/api/v4/vendors/$VENDOR_ID/returnRequests?searchType=timeFrame"
+        val httpMethod = HttpMethod.GET
+        val httpEntity = httpEntity(authorization = authorization(httpMethod, path), body = null)
+        val searchStartDateTime = searchEndDateTime.truncatedTo(ChronoUnit.DAYS)
+        val uriBuilder = baseUriBuilder(path)
+            .addParameter("searchType", "timeFrame")
+            .addParameter("status", "RU")
+            .addParameter("createdAtFrom", searchStartDateTime.format(DATE_TIME_FORMATTER))
+            .addParameter("createdAtTo", searchEndDateTime.format(DATE_TIME_FORMATTER))
+        val response: ResponseEntity<CoupangCanceledOrdersResponse> =
+            restTemplate.exchange(uriBuilder.build(), httpMethod, httpEntity)
+        return response.body ?: throw IllegalArgumentException(
+            "쿠팡 주문 취소 목록을 불러오는데 실패했습니다. 검색 시작시간: $searchStartDateTime / 검색 끝 시간: $searchEndDateTime"
+        )
     }
 
     private fun baseUriBuilder(path: String): URIBuilder {

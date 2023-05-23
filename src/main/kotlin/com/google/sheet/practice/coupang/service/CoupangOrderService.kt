@@ -86,9 +86,9 @@ class CoupangOrderService(
             .map { it.data[0].toDomain() }
     }
 
-    fun newOrders(searchEndDateTime: LocalDateTime): List<CoupangOrder> {
+    private fun newOrders(searchEndDateTime: LocalDateTime): List<CoupangOrder> {
         val searchStartDateTime = searchEndDateTime.minusHours(24)
-        if (searchStartDateTime.dayOfMonth != searchEndDateTime.dayOfMonth) {
+        if (isItBeforeAndAfterMidnight(searchStartDateTime, searchEndDateTime)) {
             val midnight = LocalDateTime.of(
                 searchEndDateTime.year,
                 searchEndDateTime.month,
@@ -116,6 +116,11 @@ class CoupangOrderService(
         )
         return newOrdersResponse.data.map { it.toDomain() }
     }
+
+    private fun isItBeforeAndAfterMidnight(
+        searchStartDateTime: LocalDateTime,
+        searchEndDateTime: LocalDateTime
+    ) = searchStartDateTime.dayOfMonth != searchEndDateTime.dayOfMonth
 
     companion object {
         private const val SHEET_NAME = "coupang"
