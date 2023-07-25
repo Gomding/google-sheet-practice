@@ -62,8 +62,10 @@ class NaverOrderService(
             return emptyList()
         }
         val ordersResponse = lastChangedStatusOrders.data.lastChangeStatuses
-        val newOrders = ordersResponse.map { it.toDomain() }
-            .filter { it.isPayed() }
+        val orders = ordersResponse.map { it.toDomain() }
+        val cancelRequestOrders = orders.filter { it.isCancelRequestOrder() }
+        this.sendCancelRequestOrdersNotification(cancelRequestOrders.map { it.productOrderId })
+        val newOrders = orders.filter { it.isNewOrder() }
         return newOrders.map { it.productOrderId }
     }
 
@@ -88,6 +90,28 @@ class NaverOrderService(
             }
             lineNotificationClient.sendNotification(message)
         }
+    }
+
+    private fun sendCancelRequestOrdersNotification(cancelRequestOrderIds: List<Long>) {
+        val cancelRequestProductOrderDetails = this.orderDetailsBeforeDelivery(cancelRequestOrderIds)
+        cancelRequestProductOrderDetails.forEach {
+            val message = with(it) {
+                """네이버 쇼핑몰에 주문 취소 요청이 들어왔어요 ㅠ.ㅠ
+                    |
+                    |취소한 상품
+                    |$productName - $productOption
+                    |$quantity 개
+                    |
+                    |주문 상품 페이지: https://smartstore.naver.com/hulululu/products/${productId}
+                    |
+                    |주문 취소한 고객정보
+                    |고객명: ${shippingAddress.name}
+                    |전화번호: ${shippingAddress.tel1}
+                """.trimMargin()
+            }
+            lineNotificationClient.sendNotification(message)
+        }
+
     }
 
     private fun orderDetailsBeforeDelivery(orderIds: List<Long>): List<NaverProductOrderDetail> {
