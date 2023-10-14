@@ -22,7 +22,7 @@ data class NaverLastChangedStatusOrderResponse(
     val productOrderId: Long,
     val orderId: Long,
     val productOrderStatus: String,
-    val paymentDate: String,
+    val paymentDate: String?,
     val lastChangedDate: String,
     val lastChangedType: String,
 ) {

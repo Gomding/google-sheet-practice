@@ -62,7 +62,7 @@ class NaverOrderService(
             return emptyList()
         }
         val ordersResponse = lastChangedStatusOrders.data.lastChangeStatuses
-        val orders = ordersResponse.map { it.toDomain() }
+        val orders = ordersResponse.filter { it.paymentDate != null }.map { it.toDomain() }
         val cancelRequestOrders = orders.filter { it.isCancelRequestOrder() }
         this.sendCancelRequestOrdersNotification(cancelRequestOrders.map { it.productOrderId })
         val newOrders = orders.filter { it.isNewOrder() }
