@@ -7,7 +7,6 @@ plugins {
     id("org.jetbrains.kotlin.plugin.noarg") version "1.5.31"
     kotlin("jvm") version "1.7.21"
     kotlin("plugin.spring") version "1.5.31"
-    kotlin("plugin.jpa") version "1.5.31"
     application
 }
 
@@ -32,7 +31,6 @@ dependencies {
 
     // persistence
     runtimeOnly("com.h2database:h2")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
     // google-sheet-client
     implementation("com.google.api-client:google-api-client:2.0.0")
