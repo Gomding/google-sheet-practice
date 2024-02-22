@@ -3,7 +3,6 @@ package com.google.sheet.practice
 import com.google.sheet.practice.common.CurrentDateTimeService
 import com.google.sheet.practice.coupang.service.CoupangOrderService
 import com.google.sheet.practice.naver.service.NaverOrderService
-import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Component
 import java.util.*
 
 
-@EnableBatchProcessing
 @SpringBootApplication
 class GoogleSheetPracticeApplication {
 }

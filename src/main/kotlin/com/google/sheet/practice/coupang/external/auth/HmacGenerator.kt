@@ -11,6 +11,6 @@ object HmacGenerator {
     }
 
     private const val ACCESS_KEY = "e6b54338-4b48-4328-a047-ac721bb3112f"
-    private const val SECRET_KEY = "6dad2375ac3d5f7ba090a30cfc5dfc921e4ee191"
+    private const val SECRET_KEY = "b27823222e3df111a4bb0533468844b8e7cc13da"
 }
 
