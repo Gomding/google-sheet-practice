@@ -11,17 +11,5 @@ jobs:
   cron:
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Install JDK 17
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle' # https://github.com/actions/setup-java#caching-packages-dependencies
-
-      - name: build gradle
-        run: ./gradlew bootJar
-
       - name: Run Application
-        run: java -jar ./build/libs/google-sheet-practice.jar
+        run: java -jar google-sheet-practice.jar
