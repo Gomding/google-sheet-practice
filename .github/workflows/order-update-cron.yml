@@ -12,4 +12,4 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Run Application
-        run: java -jar google-sheet-practice.jar
+        run: java -jar /home/backchida/google-sheet-practice.jar
