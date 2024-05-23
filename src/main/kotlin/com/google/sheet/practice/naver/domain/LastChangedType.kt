@@ -12,6 +12,7 @@ enum class LastChangedType(
     CLAIM_REJECTED("클레임 철회", false),
     DISPATCHED("발송 처리", false),
     CLAIM_REQUESTED("클레임 요청", false),
+    CLAIM_REDELIVERING("교환 재배송처리", false),
     COLLECT_DONE("수거 완료", false),
     CLAIM_HOLDBACK_RELEASED("클레임 보류 해제", false),
     CLAIM_COMPLETED("클레임 완료", false),
